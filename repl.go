@@ -7,14 +7,15 @@ import (
 	"os"
 	"strings"
 
-	pokeapi "github.com/Dorfieeee/bootdev-pokedex/internal/pokeapi"
+	"github.com/Dorfieeee/bootdev-pokedex/internal/pokeapi"
+	"github.com/Dorfieeee/bootdev-pokedex/internal/pokedex"
 )
 
 type config struct {
 	Next     *string
 	Previous *string
 	Api      *pokeapi.PokeApi
-	Pokedex  map[string]pokeapi.Pokemon
+	Pokedex  *pokedex.Pokedex
 }
 
 type cliCommand struct {
@@ -105,7 +106,7 @@ func commandCatch(c *config, args ...string) error {
 	if chance < difficulty {
 		// Sucess
 		fmt.Printf("%s was caught!\n", name)
-		c.Pokedex[name] = pokemon
+		c.Pokedex.AddPokemon(pokemon)
 	} else {
 		fmt.Printf("%s escaped!\n", name)
 	}
@@ -118,7 +119,7 @@ func commandInspect(c *config, args ...string) error {
 		return fmt.Errorf("Error: Expected Pokemon name")
 	}
 	name := args[0]
-	pokemon, prs := c.Pokedex[name]
+	pokemon, prs := c.Pokedex.GetPokemon(name)
 	if !prs {
 		fmt.Println("you have not caught that pokemon")
 		return nil
@@ -142,12 +143,12 @@ func commandInspect(c *config, args ...string) error {
 }
 
 func commandPokedex(c *config, args ...string) error {
-	if len(c.Pokedex) == 0 {
+	if len(c.Pokedex.Store.Pokemons) == 0 {
 		fmt.Println("No records in your Pokedex yet")
 		return nil
 	}
 	fmt.Println("Your Pokedex")
-	for name := range c.Pokedex {
+	for name := range c.Pokedex.Store.Pokemons {
 		fmt.Printf("- %s\n", name)
 	}
 	return nil

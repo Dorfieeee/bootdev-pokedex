@@ -8,13 +8,14 @@ import (
 
 	"github.com/Dorfieeee/bootdev-pokedex/internal/pokeapi"
 	"github.com/Dorfieeee/bootdev-pokedex/internal/pokecache"
+	"github.com/Dorfieeee/bootdev-pokedex/internal/pokedex"
 )
 
 func main() {
 	cache := pokecache.NewCache(60 * time.Second)
 	config := config{
 		Api:     pokeapi.NewPokeApi(cache),
-		Pokedex: make(map[string]pokeapi.Pokemon),
+		Pokedex: pokedex.NewPokedex(),
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
