@@ -1,6 +1,12 @@
 package main
 
-import "testing"
+import (
+	"testing"
+	"time"
+
+	"github.com/Dorfieeee/bootdev-pokedex/internal/pokeapi"
+	"github.com/Dorfieeee/bootdev-pokedex/internal/pokecache"
+)
 
 func TestCleanInput(t *testing.T) {
 	cases := []struct {
@@ -63,15 +69,34 @@ func TestCommandInput(t *testing.T) {
 			expected: true,
 		},
 		{
+			input:    "explore",
+			expected: true,
+		},
+		{
 			input:    "badcommand",
 			expected: false,
 		},
 	}
 
 	for _, c := range cases {
-		_, actual := Commands[c.input]
+		_, actual := getCommands()[c.input]
 		if actual != c.expected {
 			t.Errorf("Test failed\nInput: '%v'\nActual: %v\nExpected: %v", c.input, actual, c.expected)
 		}
+	}
+}
+
+func TestCommandInputWithArgs(t *testing.T) {
+	cache := pokecache.NewCache(60 * time.Second)
+	config := config{
+		Api: pokeapi.NewPokeApi(cache),
+	}
+	exploreCmd, _ := getCommands()["explore"]
+	err := exploreCmd.callback(&config)
+	if err == nil {
+		t.Errorf("Test failed: Expected error when calling `explore` command with no arguments")
+	}
+	if err.Error() != "Error: Expected location area name" {
+		t.Errorf("Test failed: Expected error message 'Error: Expected location area name', got: %v", err)
 	}
 }

@@ -12,12 +12,16 @@ type cacheEntry struct {
 
 type Cache struct {
 	entries map[string]cacheEntry
+	ttl     time.Duration
 	mu      sync.Mutex
 }
 
 func NewCache(interval time.Duration) *Cache {
-	c := &Cache{}
-	c.reapLoop(interval)
+	c := &Cache{
+		entries: make(map[string]cacheEntry),
+		ttl:     interval,
+	}
+	go c.reapLoop()
 	return c
 }
 
@@ -41,19 +45,18 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 }
 
 // Clear cached entries
-func (c *Cache) reapLoop(interval time.Duration) {
-	ticker := time.NewTicker(interval)
+func (c *Cache) reapLoop() {
+	ticker := time.NewTicker(c.ttl)
 	defer ticker.Stop()
-	go func() {
-		for range ticker.C {
-			c.mu.Lock()
-			defer c.mu.Unlock()
-			now := time.Now()
-			for name, entry := range c.entries {
-				if now.Compare(entry.createdAt.Add(interval)) == -1 {
-					delete(c.entries, name)
-				}
+	for range ticker.C {
+		c.mu.Lock()
+		now := time.Now()
+		for name, entry := range c.entries {
+			if now.Sub(entry.createdAt) > c.ttl {
+				delete(c.entries, name)
+				// fmt.Printf("Removed %s from cache\n", name)
 			}
 		}
-	}()
+		c.mu.Unlock()
+	}
 }

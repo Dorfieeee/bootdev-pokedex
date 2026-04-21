@@ -4,10 +4,18 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/Dorfieeee/bootdev-pokedex/internal/pokeapi"
+	"github.com/Dorfieeee/bootdev-pokedex/internal/pokecache"
 )
 
 func main() {
-	config := config{}
+	cache := pokecache.NewCache(60 * time.Second)
+	config := config{
+		Api:     pokeapi.NewPokeApi(cache),
+		Pokedex: make(map[string]pokeapi.Pokemon),
+	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Pokedex > ")
@@ -18,14 +26,18 @@ func main() {
 		if len(input) == 0 {
 			continue
 		}
-		cmd, ok := Commands[input[0]]
+		cmd, ok := getCommands()[input[0]]
+		args := input[1:]
 		if !ok {
 			fmt.Println("Unknown command")
 			continue
 		}
-		err := cmd.callback(&config)
+		err := cmd.callback(&config, args...)
 		if err != nil {
 			fmt.Println(err.Error())
+			if cmd.usage != "" {
+				fmt.Println(cmd.usage)
+			}
 		}
 	}
 }
